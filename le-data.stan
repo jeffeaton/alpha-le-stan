@@ -51,26 +51,17 @@ data {
   matrix[STEPS_time-1, nk_art] Xmid_art;
   matrix[STEPS_time-1, nk_natmx] Xmid_natmx;
 
-  // matrix[nk_time-1, nk_time] P_time;
-  matrix[nk_age-1, nk_age] P_age;
-  // matrix[nk_art-1, nk_art] P_art;
-  matrix[STEPS_time-artstart_tIDX-1, STEPS_time-artstart_tIDX] P_art;
-  matrix[nk_natmx-1, nk_natmx] P_natmx;
-
+  int<lower=0> pen_ord_incrate;
+  int<lower=0> pen_ord_natmx_time;
+  int<lower=0> pen_ord_natmx_age;
+  int<lower=0> pen_ord_art;
+			
+  // matrix[nk_time-!!!, nk_time] P_time;
+  matrix[nk_age-pen_ord_natmx_age, nk_age] P_age;
+  // matrix[nk_art-!!!, nk_art] P_art;
+  matrix[STEPS_time-artstart_tIDX-pen_ord_art, STEPS_time-artstart_tIDX] P_art;
+  matrix[nk_natmx-pen_ord_natmx_time, nk_natmx] P_natmx;
   matrix[nk_time*nk_age, nk_time*nk_age] Pcar_prec_incrate;
-
-  // vector[nk_time] coef_incrate_time;
-  // vector[nk_age] coef_incrate_age;
-  // vector[nk_time] coef_natmx_time;
-  // vector[nk_age] coef_natmx_age;
-  // vector[nk_art] coef_art;
-
-  // real<lower=0> sigma2_incrate_time;
-  // real<lower=0> sigma2_incrate_age;
-  // real<lower=0> sigma2_incrate_time_age;
-  // real<lower=0> sigma2_natmx_time;
-  // real<lower=0> sigma2_natmx_age;
-  // real<lower=0> sigma2_art;
 
   matrix[STEPS_time-1, STEPS_age-1] hivmx_dur_a0;     // sequenced [1:DUR, 1:STEPS_age]
   matrix[STEPS_time-1, STEPS_age-1] hivsurv_dur_a0;   // sequenced [1:DUR, 1:STEPS_age]
