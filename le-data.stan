@@ -56,7 +56,7 @@ data {
   int<lower=0> pen_ord_natmx_age;
   int<lower=0> pen_ord_art;
 			
-  // matrix[nk_time-!!!, nk_time] P_time;
+  matrix[nk_time-pen_ord_incrate, nk_time] P_time;
   matrix[nk_age-pen_ord_natmx_age, nk_age] P_age;
   // matrix[nk_art-!!!, nk_art] P_art;
   matrix[STEPS_time-artstart_tIDX-pen_ord_art, STEPS_time-artstart_tIDX] P_art;

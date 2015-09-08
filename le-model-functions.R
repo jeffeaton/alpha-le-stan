@@ -123,7 +123,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   X.art <- rbind(matrix(0, artstart.tIDX-1L, nk.art), splineDesign(k.art, x.art, outer.ok=TRUE))
   X.natmx <- splineDesign(k.natmx, c(rep(x.natmx[1], natmxstart.tIDX-1L), x.natmx), outer.ok=TRUE)
 
-  ## P.time <- diff(diag(nk.time), diff=!!!)
+  P.time <- diff(diag(nk.time), diff=pen.ord.incrate)
   P.age <- diff(diag(nk.age), diff=pen.ord.natmx.age)
   ## P.art <- diff(diag(nk.art), diff=1)
   P.natmx <- diff(diag(nk.natmx), diff=pen.ord.natmx.time)
@@ -233,7 +233,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     pen_ord_natmx_time    = pen.ord.natmx.time,
                     pen_ord_natmx_age     = pen.ord.natmx.age,
                     pen_ord_art           = pen.ord.art,
-                    ## P_time                = P.time,
+                    P_time                = P.time,
                     P_age                 = P.age,
                     P_natmx               = P.natmx,
                     P_art                 = P.art,
