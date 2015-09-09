@@ -5,7 +5,7 @@ hiv <- subset(hiv, type %in% c("survey") & !is.na(result) & !is.na(testdate))
 
 ## Declare functions
 
-prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.time){
+prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.time, hivonly=FALSE, hivelig=TRUE){
 
   ## ################## ##
   ##  Prepare the data  ##
@@ -15,62 +15,82 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
   res <- subset(res, site %in% sites & sex %in% sexes)
   hiv <- subset(hiv, site %in% sites & sex %in% sexes)
 
-  ## identify observation intervals
-  entry <- res[order(res$entry), c("id", "entry")]
-  entry <- entry[!duplicated(entry$id),]
-  exit <- res[order(res$exit, res$death, decreasing=TRUE), c("id", "exit", "death")]  # if 2 episodes exist ending on the same day, choose one with a death
-  exit <- exit[!duplicated(exit$id),]
-
-  ## create individual observation episodes
   dat <- ind
-  dat <- merge(dat, entry)
-  dat <- merge(dat, exit)
 
-  ## truncate observation episodes
-  dat <- subset(dat, entry <= max.time & exit >= min.time)  # eliminate episodes that do not intersect [min.time, max.time]
-  dat$entry[dat$entry < min.time] <- min.time
-  dat$death[dat$exit > max.time] <- 0
-  dat$exit[dat$exit > max.time] <- max.time
-
-  dat <- subset(dat, (entry-dob) <= max.age & (exit-dob) >= min.age)
-  entryage <- dat$entry - dat$dob
-  exitage <- dat$exit - dat$dob
-
-  dat$death[exitage > max.age] <- 0
-  entryage[entryage < min.age] <- min.age
-  exitage[exitage > max.age] <- max.age
-
-  dat$entry <- dat$dob + entryage
-  dat$exit <- dat$dob + exitage
-
-  ## ############## ##
-  ##  Add HIV data  ##
-  ## ############## ##
-
+  ## ################### ##
+  ##  Truncate HIV data  ##
+  ## ################### ##
+  
   ## truncate HIV data range: only use HIV tests that occurred during age and time limits
   hiv$testage <- hiv$testdate - hiv$dob
   hiv <- subset(hiv, testdate >= min.time & testdate <= max.time & testage >= min.age & testage <= max.age)
 
+  ## ################################ ##
+  ##  Calculate observation episodes  ##
+  ## ################################ ##
+  
+  if(!hivonly){
+    ## identify observation intervals
+    entry <- res[order(res$entry), c("id", "entry")]
+    entry <- entry[!duplicated(entry$id),]
+    exit <- res[order(res$exit, res$death, decreasing=TRUE), c("id", "exit", "death")]  # if 2 episodes exist ending on the same day, choose one with a death
+    exit <- exit[!duplicated(exit$id),]
+    
+    ## create individual observation episodes
+    dat <- merge(dat, entry)
+    dat <- merge(dat, exit)
+
+    if(hivelig){
+      ## truncate to firsttest if hivelig=TRUE
+      firsttest <- with(hiv, tapply(testdate, id, min))
+      firsttest <- data.frame(id=as.integer(names(firsttest)), firsttest=firsttest)
+      dat <- merge(dat, firsttest) # keep only people with HIV test
+      dat$entry <- pmax(dat$entry, dat$firsttest)
+      dat$firsttest <- NULL
+    }
+    
+    ## truncate observation episodes
+    dat <- subset(dat, entry <= max.time & exit >= min.time)  # eliminate episodes that do not intersect [min.time, max.time]
+    dat$entry[dat$entry < min.time] <- min.time
+    dat$death[dat$exit > max.time] <- 0
+    dat$exit[dat$exit > max.time] <- max.time
+    
+    dat <- subset(dat, (entry-dob) <= max.age & (exit-dob) >= min.age)
+    entryage <- dat$entry - dat$dob
+    exitage <- dat$exit - dat$dob
+    
+    dat$death[exitage > max.age] <- 0
+    entryage[entryage < min.age] <- min.age
+    exitage[exitage > max.age] <- max.age
+    
+    dat$entry <- dat$dob + entryage
+    dat$exit <- dat$dob + exitage
+  } else { # hivonly = TRUE
+    entry <- with(hiv, tapply(testdate, id, min))
+    exit <- with(hiv, tapply(testdate, id, max))
+    entry <- data.frame(id=as.integer(names(entry)), entry=entry)
+    exit <- data.frame(id=as.integer(names(exit)), exit=exit)
+
+    dat <- merge(dat, entry)
+    dat <- merge(dat, exit)
+    dat$death <- 0
+  }
+    
+    
+  ## ############## ##
+  ##  Add HIV data  ##
+  ## ############## ##
+
   ## create individual HIV test intervals
-  firsttest <- with(hiv, tapply(testdate, id, min))
   lastneg <- with(subset(hiv, result == FALSE), tapply(testdate, id, max))
   firstpos <- with(subset(hiv, result == TRUE), tapply(testdate, id, min))
-
-  firsttest <- data.frame(id=as.integer(names(firsttest)), firsttest=firsttest)
   lastneg <- data.frame(id=as.integer(names(lastneg)), lastneg=lastneg)
   firstpos <- data.frame(id=as.integer(names(firstpos)), firstpos=firstpos)
 
   ## merge HIV data
-  dat <- merge(dat, firsttest, all.x=TRUE)
   dat <- merge(dat, lastneg, all.x=TRUE)
   dat <- merge(dat, firstpos, all.x=TRUE)
-
-  dat$firstpos[dat$firstpos > dat$exit] <- NA
-  dat$lastneg[dat$lastneg < dat$entry] <- NA
-
-  dat$firstpos <- pmax(dat$firstpos, dat$entry)
-  dat$lastneg <- pmin(dat$lastneg, dat$exit)
-
+  
   attr(dat, "min.time") <- min.time
   attr(dat, "max.time") <- max.time
   attr(dat, "min.age") <- min.age
@@ -137,7 +157,6 @@ discretise.cohort.data <- function(dat, dt){
   ## TODO: reconsider this later -- should date rounding be done differently?
 
   ## calculate array indices
-
   dat$entry.aIDX <- as.integer(dat$entryTS - dat$dobTS - min.ageTS) + 1L
   dat$exit.aIDX <- as.integer(dat$exitTS - dat$dobTS - min.ageTS) + 1L
   dat$exposestart.aIDX <- as.integer(dat$exposestartTS - dat$dobTS - min.ageTS) + 1L
