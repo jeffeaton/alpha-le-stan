@@ -30,20 +30,20 @@ hivsurvhaz <- function(tao, a0, param){
                                    
 
 prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
-                              min.age = 15.0, max.age = 85.0,
+                              min.age = 15.0, max.age = 60.0,
                               min.time = 1980.5, max.time = 2011.5,
                               natmxstart.time, artstart.time,
                               ## nk.time = 7, nk.age = 7, nk.natmx = 5, nk.art = 5,
                               k.dt = 5, nk.art=5,
                               pen.ord.incrate=1L, pen.ord.natmx.time=1L, pen.ord.natmx.age=1L, pen.ord.art=1L,
-                              nsamp=NULL, hivonly=FALSE){
+                              nsamp=NULL, hivonly=FALSE, hivelig=FALSE){
+
+  ## hivonly: if TRUE, only use HIV test data, don't use any residency episode data (no mortality).
+  ## hivelig: indicates individuals only included if they have some HIV status information, so left truncate
+  ##          at first HIV status information (inclusion conditional on survival to that point).
 
   if(is.null(dat)){
-    dat <- prepare.interval.data(sites, sexes, min.age, max.age, min.time, max.time)
-    if(hivonly){
-      dat <- subset(dat, !is.na(lastneg) | !is.na(firstpos))
-      dat$entry <- pmax(dat$entry, dat$firsttest)
-    }
+    dat <- prepare.interval.data(sites, sexes, min.age, max.age, min.time, max.time, hivonly, hivelig)
   }
 
   ## Select sub-sample 
@@ -123,7 +123,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   X.art <- rbind(matrix(0, artstart.tIDX-1L, nk.art), splineDesign(k.art, x.art, outer.ok=TRUE))
   X.natmx <- splineDesign(k.natmx, c(rep(x.natmx[1], natmxstart.tIDX-1L), x.natmx), outer.ok=TRUE)
 
-  ## P.time <- diff(diag(nk.time), diff=!!!)
+  P.time <- diff(diag(nk.time), diff=pen.ord.incrate)
   P.age <- diff(diag(nk.age), diff=pen.ord.natmx.age)
   ## P.art <- diff(diag(nk.art), diff=1)
   P.natmx <- diff(diag(nk.natmx), diff=pen.ord.natmx.time)
@@ -233,7 +233,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     pen_ord_natmx_time    = pen.ord.natmx.time,
                     pen_ord_natmx_age     = pen.ord.natmx.age,
                     pen_ord_art           = pen.ord.art,
-                    ## P_time                = P.time,
+                    P_time                = P.time,
                     P_age                 = P.age,
                     P_natmx               = P.natmx,
                     P_art                 = P.art,

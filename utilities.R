@@ -21,6 +21,14 @@ compile.chains <- function(prefix){
   sflist2stanfit(lapply(grep(prefix, ls(), value=TRUE), get, envir=environment()))
 }
 
+expose_file <- function(stanfile, path="", url=TRUE){
+  if(url)
+    code <- readLines(curl(stanfile))
+  else
+    code <- readLines(stanfile)
+  expose_stan_functions(stan_model(model_code=paste(c(code, "\nmodel{}"), collapse="\n")))
+  return(invisible())
+}
 
 
 ## ## Example:
