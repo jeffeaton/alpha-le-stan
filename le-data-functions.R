@@ -90,6 +90,11 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
   ## merge HIV data
   dat <- merge(dat, lastneg, all.x=TRUE)
   dat <- merge(dat, firstpos, all.x=TRUE)
+
+  dat$firstpos[dat$firstpos > dat$exit] <- NA
+  dat$lastneg[dat$lastneg < dat$entry] <- NA
+  dat$firstpos <- pmax(dat$firstpos, dat$entry)
+  dat$lastneg <- pmin(dat$lastneg, dat$exit)
   
   attr(dat, "min.time") <- min.time
   attr(dat, "max.time") <- max.time
