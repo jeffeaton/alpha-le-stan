@@ -118,15 +118,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
 
 
   ## non-HIV mortality model
-
-<<<<<<< HEAD
-  P.time <- diff(diag(nk.time), diff=pen.ord.incrate)
-  P.age <- diff(diag(nk.age), diff=pen.ord.natmx.age)
-  ## P.art <- diff(diag(nk.art), diff=1)
-  P.natmx <- diff(diag(nk.natmx), diff=pen.ord.natmx.time)
-=======
   x.natmx <- natmxstart.timeTS:max.timeTS*dt
->>>>>>> master
 
   k.natmx.time <- k.dt*(floor(natmxstart.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
   k.natmx.age <- k.incrate.age
@@ -248,13 +240,6 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     ## X_art                 = X.art,
                     ## Xmid_art              = Xmid.art,
                     pen_ord_art           = pen.ord.art,
-<<<<<<< HEAD
-                    P_time                = P.time,
-                    P_age                 = P.age,
-                    P_natmx               = P.natmx,
-                    P_art                 = P.art,
-                    Pcar_prec_incrate     = Pcar_prec_incrate)
-=======
                     D_art                 = D_art,
                     ## HIV survival model
                     log_hivmx_dur_a0      = log_hivmx_dur_a0,
@@ -263,7 +248,6 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     hivmx_dur_a0          = hivmx_dur_a0,
                     hivsurv_dur_a0        = hivsurv_dur_a0,
                     hivmxMID_dur_a0       = hivmxMID_dur_a0)
->>>>>>> master
 }
 
 
