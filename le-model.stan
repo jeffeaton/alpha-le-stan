@@ -1,8 +1,8 @@
 parameters {
 
-  matrix[nk_time, nk_age] coef_incrate_time_age;
-  vector[nk_natmx] coef_natmx_time;
-  vector[nk_age-1] param_natmx_age;
+  matrix[nk_incrate_time, nk_incrate_age] coef_incrate_time_age;
+  vector[nk_natmx_time] coef_natmx_time;
+  vector[nk_natmx_age-1] param_natmx_age;
   vector<upper=0>[STEPS_time-artstart_tIDX] dt_log_artrr;
   real<lower=0> sigma_incrate_time_age;
   real<lower=0> sigma_natmx_time;
@@ -11,12 +11,12 @@ parameters {
 }
 transformed parameters{
 
-  vector[nk_age] coef_natmx_age;
+  vector[nk_natmx_age] coef_natmx_age;
 
-  for(i in 1:nk_age)
-    if (i < fixcoef_age_idx){
+  for(i in 1:nk_natmx_age)
+    if (i < fixcoef_natmx_age){
       coef_natmx_age[i] <- param_natmx_age[i];
-    } else if (i == fixcoef_age_idx) {
+    } else if (i == fixcoef_natmx_age) {
       coef_natmx_age[i] <- -sum(param_natmx_age);
     } else {
       coef_natmx_age[i] <- param_natmx_age[i-1];
@@ -46,27 +46,27 @@ model {
   //////////////////////
 
   {
-    vector[nk_time*nk_age] vec_coef_incrate_time_age;
+    vector[nk_incrate_time*nk_incrate_age] vec_coef_incrate_time_age;
 
     vec_coef_incrate_time_age <- to_vector(coef_incrate_time_age);
-    increment_log_prob(-nk_time*nk_age*log(sigma_incrate_time_age) -
+    increment_log_prob(-nk_incrate_time*nk_incrate_age*log(sigma_incrate_time_age) -
 		       1/(2*sigma_incrate_time_age*sigma_incrate_time_age) * (vec_coef_incrate_time_age' * Pcar_prec_incrate * vec_coef_incrate_time_age));
     
-    P_natmx * coef_natmx_time ~ normal(0, sigma_natmx_time);
-    P_age * coef_natmx_age ~ normal(0, sigma_natmx_age);
-    P_art * dt_log_artrr ~ normal(0, sigma_art);
+    D_natmx_time * coef_natmx_time ~ normal(0, sigma_natmx_time);
+    D_natmx_age * coef_natmx_age ~ normal(0, sigma_natmx_age);
+    D_art * dt_log_artrr ~ normal(0, sigma_art);
   }
   
   ///////////////////////////////////////////////////////
   //  Construct incidence rate and mortality matrices  //
   ///////////////////////////////////////////////////////
 
-  incrateMID_time_age <- exp(Xmid_time * coef_incrate_time_age * Xmid_age');
+  incrateMID_time_age <- exp(Xmid_incrate_time * coef_incrate_time_age * Xmid_incrate_age');
   cumavoid_time_age <- exp(-dt*diagCumSum(incrateMID_time_age));
   cumavoidMID_time_age <- block(cumavoid_time_age, 1, 1, STEPS_time-1, STEPS_age-1) .* exp(-dt/2*incrateMID_time_age);
 
-  natmx_time_age <- exp(X_natmx * coef_natmx_time) * exp(X_age * coef_natmx_age)';
-  natsurv_time_age <- exp(-dt*diagCumSum(exp(Xmid_natmx * coef_natmx_time) * exp(Xmid_age * coef_natmx_age)'));
+  natmx_time_age <- exp(X_natmx_time * coef_natmx_time) * exp(X_natmx_age * coef_natmx_age)';
+  natsurv_time_age <- exp(-dt*diagCumSum(exp(Xmid_natmx_time * coef_natmx_time) * exp(Xmid_natmx_age * coef_natmx_age)'));
 
   {
     vector[STEPS_time-artstart_tIDX] log_artrr;

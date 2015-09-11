@@ -85,61 +85,65 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   ##  Prepare spline model  ##
   ## ###################### ##
 
+  ## Model based on equally spaced knots through domain at interval k.dt
+
   x.time <- min.timeTS:max.timeTS*dt
   x.age <- min.ageTS:max.ageTS*dt
-  x.art <- artstart.timeTS:max.timeTS*dt
-  x.natmx <- natmxstart.timeTS:max.timeTS*dt
-
-  ## ## Model based on specifying number of knots
-  ## time.dur <- max.timeTS * dt - min.timeTS * dt
-  ## k.time <- seq(min.timeTS*dt - 3*time.dur/(nk.time-3), max.timeTS*dt + 3*time.dur/(nk.time-3), time.dur/(nk.time-3))
-
-  ## age.dur <- (max.ageTS - min.ageTS)*dt
-  ## k.age <- seq(min.ageTS*dt - 3*age.dur/(nk.age-3), max.ageTS*dt + 3*age.dur/(nk.age-3), age.dur/(nk.age-3))
-
-  ## natmx.dur <- (max.timeTS - natmxstart.timeTS)*dt
-  ## k.natmx <- seq(natmxstart.timeTS*dt - 3*natmx.dur/(nk.natmx-3), max.timeTS*dt + 3*natmx.dur/(nk.natmx-3), natmx.dur/(nk.natmx-3))
-
-  art.dur <- (max.timeTS - artstart.timeTS)*dt
-  k.art <- seq(artstart.timeTS*dt - 3*art.dur/(nk.art-3), max.timeTS*dt + 3*art.dur/(nk.art-3), art.dur/(nk.art-3))
-
-  ## Model based on equally spaced knots through domain at interval k.dt
-  k.time <- k.dt*(floor(min.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
-  k.age <- k.dt*(floor(min.age / k.dt) - 3L):(ceiling(max.age / k.dt) + 3L)
-  k.natmx <- k.dt*(floor(natmxstart.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
-
-  nk.time <- length(k.time)-4L
-  nk.age <- length(k.age)-4L
-  nk.natmx <- length(k.natmx)-4L
-
-  Xmid.time <- splineDesign(k.time, x.time[-1]-dt/2, outer.ok=TRUE)
-  Xmid.age <- splineDesign(k.age, x.age[-1]-dt/2)
-  Xmid.art <- rbind(matrix(0, artstart.tIDX-1L, nk.art), splineDesign(k.art, x.art[-1]-dt/2))
-  Xmid.natmx <- splineDesign(k.natmx, c(rep(x.natmx[1], natmxstart.tIDX-1L), x.natmx[-1]-dt/2))
+  STEPS_time=length(x.time)
+  STEPS_age=length(x.age)
 
 
-  X.time <- splineDesign(k.time, x.time, outer.ok=TRUE)
-  X.age <- splineDesign(k.age, x.age, outer.ok=TRUE)
-  X.art <- rbind(matrix(0, artstart.tIDX-1L, nk.art), splineDesign(k.art, x.art, outer.ok=TRUE))
-  X.natmx <- splineDesign(k.natmx, c(rep(x.natmx[1], natmxstart.tIDX-1L), x.natmx), outer.ok=TRUE)
+  ## incidence model
+  k.incrate.time <- k.dt*(floor(min.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
+  k.incrate.age <- k.dt*(floor(min.age / k.dt) - 3L):(ceiling(max.age / k.dt) + 3L)
 
-  P.time <- diff(diag(nk.time), diff=pen.ord.incrate)
-  P.age <- diff(diag(nk.age), diff=pen.ord.natmx.age)
-  ## P.art <- diff(diag(nk.art), diff=1)
-  P.natmx <- diff(diag(nk.natmx), diff=pen.ord.natmx.time)
+  nk_incrate_time <- length(k.incrate.time)-4L
+  nk_incrate_age <- length(k.incrate.age)-4L
 
-  Pcar_prec_incrate <- matrix(0, nk.time*nk.age, nk.time*nk.age)
-  diag(Pcar_prec_incrate[-1,]) <- rep(rep(c(0, -1), c(1, nk.time-1)), nk.age)[-1]
-  diag(Pcar_prec_incrate[-(1:nk.time),]) <- -1
+  X_incrate_time <- splineDesign(k.incrate.time, x.time, outer.ok=TRUE)
+  Xmid_incrate_time <- splineDesign(k.incrate.time, x.time[-1]-dt/2, outer.ok=TRUE)
+  X_incrate_age <- splineDesign(k.incrate.age, x.age, outer.ok=TRUE)
+  Xmid_incrate_age <- splineDesign(k.incrate.age, x.age[-1]-dt/2)
+
+  D_incrate_time <- diff(diag(nk_incrate_time), diff=pen.ord.incrate)
+  D_incrate_age <- diff(diag(nk_incrate_age), diff=pen.ord.incrate)
+
+  Pcar_prec_incrate <- matrix(0, nk_incrate_time*nk_incrate_age, nk_incrate_time*nk_incrate_age)
+  diag(Pcar_prec_incrate[-1,]) <- rep(rep(c(0, -1), c(1, nk_incrate_time-1)), nk_incrate_age)[-1]
+  diag(Pcar_prec_incrate[-(1:nk_incrate_time),]) <- -1
   Pcar_prec_incrate <- Pcar_prec_incrate+t(Pcar_prec_incrate)
   diag(Pcar_prec_incrate) <- -rowSums(Pcar_prec_incrate)
 
   Pcar_prec_incrate <- Pcar_prec_incrate %^% pen.ord.incrate
 
-  STEPS_time=length(x.time)
-  STEPS_age=length(x.age)
 
-  P.art <- diff(diag(STEPS_time - artstart.tIDX), diff=pen.ord.art)
+  ## non-HIV mortality model
+
+  x.natmx <- natmxstart.timeTS:max.timeTS*dt
+
+  k.natmx.time <- k.dt*(floor(natmxstart.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
+  k.natmx.age <- k.incrate.age
+
+  nk_natmx_time <- length(k.natmx.time)-4L
+  nk_natmx_age <- length(k.natmx.age)-4L
+
+  X_natmx_time <- splineDesign(k.natmx.time, c(rep(x.natmx[1], natmxstart.tIDX-1L), x.natmx), outer.ok=TRUE)
+  Xmid_natmx_time <- splineDesign(k.natmx.time, c(rep(x.natmx[1], natmxstart.tIDX-1L), x.natmx[-1]-dt/2))
+  X_natmx_age <- splineDesign(k.natmx.age, x.age, outer.ok=TRUE)
+  Xmid_natmx_age <- splineDesign(k.natmx.age, x.age[-1]-dt/2)
+
+  D_natmx_time<- diff(diag(nk_natmx_time), diff=pen.ord.natmx.time)
+  D_natmx_age <- diff(diag(nk_natmx_age), diff=pen.ord.natmx.age)
+
+  
+  ## ART model
+
+  ## x.art <- artstart.timeTS:max.timeTS*dt
+  ## X.art <- rbind(matrix(0, artstart.tIDX-1L, nk.art), splineDesign(k.art, x.art, outer.ok=TRUE))
+  ## Xmid.art <- rbind(matrix(0, artstart.tIDX-1L, nk.art), splineDesign(k.art, x.art[-1]-dt/2))
+  ## P.art <- diff(diag(nk.art), diff=1)
+  
+  D_art <- diff(diag(STEPS_time - artstart.tIDX), diff=pen.ord.art)
 
   ## ##################################### ##
   ##  Calculate HIV survival lookup table  ##
@@ -198,46 +202,53 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     aggr_death            = aggr$death,
                     aggr_hivpos           = aggr$hivpos,
                     aggr_nrepl            = aggr$nrepl,
-                    ##
+                    ## MODEL PARAMETERS ##
+                    x_time                = x.time,
+                    x_age                 = x.age,
+                    ## x_art                 = x.art,
+                    x_natmx               = x.natmx,
+                    ## incidence model
+                    nk_incrate_time       = nk_incrate_time,
+                    nk_incrate_age        = nk_incrate_age,
+                    k_incrate_time        = k.incrate.time,
+                    k_incrate_age         = k.incrate.age,
+                    X_incrate_time        = X_incrate_time,
+                    Xmid_incrate_time     = Xmid_incrate_time,
+                    X_incrate_age         = X_incrate_age,
+                    Xmid_incrate_age      = Xmid_incrate_age,
+                    D_incrate_time        = D_incrate_time,
+                    D_incrate_age         = D_incrate_age,
+                    pen_ord_incrate       = pen.ord.incrate,
+                    Pcar_prec_incrate     = Pcar_prec_incrate,
+                    ## non-HIV mortality model
+                    nk_natmx_time         = nk_natmx_time,
+                    nk_natmx_age          = nk_natmx_age,
+                    k_natmx_time          = k.natmx.time,
+                    k_natmx_age           = k.natmx.age,
+                    X_natmx_time          = X_natmx_time,
+                    Xmid_natmx_time       = Xmid_natmx_time,
+                    X_natmx_age           = X_natmx_age,
+                    Xmid_natmx_age        = Xmid_natmx_age,
+                    pen_ord_natmx_time    = pen.ord.natmx.time,
+                    pen_ord_natmx_age     = pen.ord.natmx.age,
+                    D_natmx_time          = D_natmx_time,
+                    D_natmx_age           = D_natmx_age,
+                    fixcoef_natmx_time    = as.integer(nk_natmx_time/2),
+                    fixcoef_natmx_age     = as.integer(nk_natmx_age/2),
+                    ## ART model
+                    ## nk_art                = nk.art,
+                    ## k_art                 = k.art,
+                    ## X_art                 = X.art,
+                    ## Xmid_art              = Xmid.art,
+                    pen_ord_art           = pen.ord.art,
+                    D_art                 = D_art,
+                    ## HIV survival model
                     log_hivmx_dur_a0      = log_hivmx_dur_a0,
                     log_hivsurv_dur_a0    = log_hivsurv_dur_a0,
                     log_hivmxMID_dur_a0   = log_hivmxMID_dur_a0,
                     hivmx_dur_a0          = hivmx_dur_a0,
                     hivsurv_dur_a0        = hivsurv_dur_a0,
-                    hivmxMID_dur_a0       = hivmxMID_dur_a0,
-                    ##
-                    nk_time               = nk.time,
-                    nk_age                = nk.age,
-                    nk_art                = nk.art,
-                    nk_natmx              = nk.natmx,
-                    k_time                = k.time,
-                    k_age                 = k.age,
-                    k_art                 = k.art,
-                    k_natmx               = k.natmx,
-                    fixcoef_age_idx       = as.integer(nk.age/2),
-                    fixcoef_time_idx      = as.integer(nk.time/2),
-                    x_time                = x.time,
-                    x_age                 = x.age,
-                    x_art                 = x.art,
-                    x_natmx               = x.natmx,
-                    X_time                = X.time,
-                    X_age                 = X.age,
-                    X_art                 = X.art,
-                    X_natmx               = X.natmx,
-                    Xmid_time             = Xmid.time,
-                    Xmid_age              = Xmid.age,
-                    Xmid_art              = Xmid.art,
-                    Xmid_natmx            = Xmid.natmx,
-                    ## smoothing model
-                    pen_ord_incrate       = pen.ord.incrate,
-                    pen_ord_natmx_time    = pen.ord.natmx.time,
-                    pen_ord_natmx_age     = pen.ord.natmx.age,
-                    pen_ord_art           = pen.ord.art,
-                    P_time                = P.time,
-                    P_age                 = P.age,
-                    P_natmx               = P.natmx,
-                    P_art                 = P.art,
-                    Pcar_prec_incrate     = Pcar_prec_incrate)
+                    hivmxMID_dur_a0       = hivmxMID_dur_a0)
 }
 
 
