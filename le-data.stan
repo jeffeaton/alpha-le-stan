@@ -46,9 +46,9 @@ data {
 
   int<lower=0> pen_ord_incrate;
 
-  // matrix[nk_incrate_time-pen_ord_incrate, nk_incrate_time] D_incrate_time;
-  // matrix[nk_incrate_age-pen_ord_incrate, nk_incrate_age] D_incrate_age;
-  matrix[nk_incrate_time*nk_incrate_age, nk_incrate_time*nk_incrate_age] Pcar_prec_incrate;
+  matrix[nk_incrate_time-pen_ord_incrate, nk_incrate_time] D_incrate_time;
+  matrix[nk_incrate_age-pen_ord_incrate, nk_incrate_age] D_incrate_age;
+  // matrix[nk_incrate_time*nk_incrate_age, nk_incrate_time*nk_incrate_age] Pcar_prec_incrate;
 
 
   // non-HIV mortality model
