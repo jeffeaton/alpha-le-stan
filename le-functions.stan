@@ -35,6 +35,17 @@ functions {
     return val;
   }
 
+  row_vector col_means(matrix X) {
+    row_vector[cols(X)] val;
+    val <- rep_row_vector(1.0/rows(X), rows(X)) * X;
+    return val;
+  }
+
+  vector row_means(matrix X) {
+    vector[rows(X)] val;
+    val <- X * rep_vector(1.0/cols(X), cols(X));
+    return val;
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // calc_phivsurv: probability of surviving until exit_tIDX given infection  //
