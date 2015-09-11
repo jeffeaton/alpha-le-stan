@@ -86,4 +86,9 @@ data {
 
 }
 transformed data {
+  matrix[STEPS_time, STEPS_age] natmx_time_age;
+  matrix[STEPS_time, STEPS_age] natsurv_time_age;
+
+  natmx_time_age <- rep_matrix(0.0, STEPS_time, STEPS_age);
+  natsurv_time_age <- rep_matrix(1.0, STEPS_time, STEPS_age);
 }
