@@ -14,8 +14,8 @@ catfiles <- function(..., path="", url=TRUE, string=TRUE){
     return(lines)
 }
 
-compile.chains <- function(prefix){
-  files <- system(paste("ls ", prefix, "*.RData", sep=""), inter=TRUE)
+compile.chains <- function(prefix, path=""){
+  files <- system(paste("ls ", path, prefix, "*.RData", sep=""), inter=TRUE)
   print(paste(prefix, ": ", length(files), " chains found", sep=""))
   if(length(files) == 0) return(NULL);
   lapply(files, load, environment())
