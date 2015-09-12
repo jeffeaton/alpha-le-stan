@@ -2,9 +2,9 @@ parameters {
 
   // matrix[nk_incrate_time, nk_incrate_age] coef_incrate_time_age;
   vector[nk_incrate_time] coef_incrate_time;
-  vector[nk_incrate_time-1] param_incrate_age;
+  vector[nk_incrate_age-1] param_incrate_age;
   vector[nk_natmx_time] coef_natmx_time;
-  vector[nk_natmx_time-1] param_natmx_age;
+  vector[nk_natmx_age-1] param_natmx_age;
   vector<upper=0>[STEPS_time-artstart_tIDX] dt_log_artrr;
   // real<lower=0> sigma_incrate_time_age;
   real<lower=0> sigma_incrate_time;
