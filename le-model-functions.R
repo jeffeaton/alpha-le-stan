@@ -35,6 +35,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                               natmxstart.time, artstart.time,
                               ## nk.time = 7, nk.age = 7, nk.natmx = 5, nk.art = 5,
                               k.dt = 5, nk.art=5,
+                              time.pen=TRUE, age.pen=TRUE, cohort.pen=FALSE,
                               pen.ord.incrate=1L, pen.ord.natmx.time=1L, pen.ord.natmx.age=1L, pen.ord.art=1L,
                               nsamp=NULL, hivonly=FALSE, hivelig=FALSE){
 
@@ -108,10 +109,20 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   D_incrate_time <- diff(diag(nk_incrate_time), diff=pen.ord.incrate)
   D_incrate_age <- diff(diag(nk_incrate_age), diff=pen.ord.incrate)
 
+
+  ## Create precision matrix for bivariate incrate smoothing
   Pcar_prec_incrate <- matrix(0, nk_incrate_time*nk_incrate_age, nk_incrate_time*nk_incrate_age)
-  diag(Pcar_prec_incrate[-1,]) <- rep(rep(c(0, -1), c(1, nk_incrate_time-1)), nk_incrate_age)[-1]
-  diag(Pcar_prec_incrate[-(1:nk_incrate_time),]) <- -1
-  Pcar_prec_incrate <- Pcar_prec_incrate+t(Pcar_prec_incrate)
+
+  ## construct lower triangle with appropriate edges for time (vertical), age (horizontal),
+  ## or cohort (diagonal) edges [column-major order].
+  if(time.pen)
+    diag(Pcar_prec_incrate[-1,]) <- rep(rep(c(0, -1), c(1, nk_incrate_time-1)), nk_incrate_age)[-1]
+  if(age.pen)
+    diag(Pcar_prec_incrate[-(1:nk_incrate_time),]) <- -1
+  if(cohort.pen)
+    diag(Pcar_prec_incrate[-(1:(nk_incrate_time+1)),]) <- rep(rep(c(0, -1), c(1, nk_incrate_time-1)), nk_incrate_age-1)[-1]
+  
+  Pcar_prec_incrate <- Pcar_prec_incrate + t(Pcar_prec_incrate)
   diag(Pcar_prec_incrate) <- -rowSums(Pcar_prec_incrate)
 
   Pcar_prec_incrate <- Pcar_prec_incrate %^% pen.ord.incrate
