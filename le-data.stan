@@ -36,20 +36,15 @@ data {
   // MODEL PARAMETERS
 
   // incidence model
-  int<lower=5> nk_incrate_time;
-  int<lower=5> nk_incrate_age;
-
-  matrix[STEPS_time, nk_incrate_time] X_incrate_time;
-  matrix[STEPS_time-1, nk_incrate_time] Xmid_incrate_time;
-  matrix[STEPS_age, nk_incrate_age] X_incrate_age;
-  matrix[STEPS_age-1, nk_incrate_age] Xmid_incrate_age;
 
   int<lower=0> pen_ord_incrate;
 
   // matrix[nk_incrate_time-pen_ord_incrate, nk_incrate_time] D_incrate_time;
   // matrix[nk_incrate_age-pen_ord_incrate, nk_incrate_age] D_incrate_age;
-  matrix[nk_incrate_time*nk_incrate_age, nk_incrate_time*nk_incrate_age] Pcar_prec_incrate;
-
+  int P_incrate_nnz;
+  vector[P_incrate_nnz] P_incrate_w;
+  int P_incrate_v[P_incrate_nnz];
+  int P_incrate_u[(STEPS_time-1)*(STEPS_age-1)+1];
 
   // non-HIV mortality model
   int<lower=5> nk_natmx_time;
@@ -86,4 +81,6 @@ data {
 
 }
 transformed data {
+  int P_incrate_n;
+  P_incrate_n <- (STEPS_time-1)*(STEPS_age-1);
 }

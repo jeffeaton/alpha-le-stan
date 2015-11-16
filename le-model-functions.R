@@ -95,45 +95,39 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
 
 
   ## incidence model
-  k.incrate.time <- k.dt*(floor(min.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
-  k.incrate.age <- k.dt*(floor(min.age / k.dt) - 3L):(ceiling(max.age / k.dt) + 3L)
 
-  nk_incrate_time <- length(k.incrate.time)-4L
-  nk_incrate_age <- length(k.incrate.age)-4L
+  D_incrate_time <- diff(diag(STEPS_time-1), diff=pen.ord.incrate)
+  D_incrate_age <- diff(diag(STEPS_age-1), diff=pen.ord.incrate)
 
-  X_incrate_time <- splineDesign(k.incrate.time, x.time, outer.ok=TRUE)
-  Xmid_incrate_time <- splineDesign(k.incrate.time, x.time[-1]-dt/2, outer.ok=TRUE)
-  X_incrate_age <- splineDesign(k.incrate.age, x.age, outer.ok=TRUE)
-  Xmid_incrate_age <- splineDesign(k.incrate.age, x.age[-1]-dt/2)
-
-  D_incrate_time <- diff(diag(nk_incrate_time), diff=pen.ord.incrate)
-  D_incrate_age <- diff(diag(nk_incrate_age), diff=pen.ord.incrate)
-
-
+  
   ## Create precision matrix for bivariate incrate smoothing
-  Pcar_prec_incrate <- matrix(0, nk_incrate_time*nk_incrate_age, nk_incrate_time*nk_incrate_age)
+  P_incrate <- Matrix(0, (STEPS_time-1)*(STEPS_age-1), (STEPS_time-1)*(STEPS_age-1))
 
   ## construct lower triangle with appropriate edges for time (vertical), age (horizontal),
   ## or cohort (diagonal) edges [column-major order].
   if(time.pen)
-    diag(Pcar_prec_incrate[-1,]) <- rep(rep(c(0, -1), c(1, nk_incrate_time-1)), nk_incrate_age)[-1]
+    diag(P_incrate[-1,]) <- rep(rep(c(0, -1), c(1, (STEPS_time-1)-1)), (STEPS_age-1))[-1]
   if(age.pen)
-    diag(Pcar_prec_incrate[-(1:nk_incrate_time),]) <- -1
+    diag(P_incrate[-(1:(STEPS_time-1)),]) <- -1
   if(cohort.pen)
-    diag(Pcar_prec_incrate[-(1:(nk_incrate_time+1)),]) <- rep(rep(c(0, -1), c(1, nk_incrate_time-1)), nk_incrate_age-1)[-1]
+    diag(P_incrate[-(1:((STEPS_time-1)+1)),]) <- rep(rep(c(0, -1), c(1, (STEPS_time-1)-1)), (STEPS_age-1)-1)[-1]
   
-  Pcar_prec_incrate <- Pcar_prec_incrate + t(Pcar_prec_incrate)
-  diag(Pcar_prec_incrate) <- -rowSums(Pcar_prec_incrate)
+  P_incrate <- P_incrate + t(P_incrate)
+  diag(P_incrate) <- -rowSums(P_incrate)
 
-  Pcar_prec_incrate <- Pcar_prec_incrate %^% pen.ord.incrate
-
+  ## Integer power w/ sparse matrix: P_incrate %^% pen.ord.incrate
+  P_tmp <- Diagonal(nrow(P_incrate))
+  for(ii in seq_len(pen.ord.incrate))
+    P_tmp <- P_tmp %*% P_incrate
+  P_incrate <- P_tmp
+  
 
   ## non-HIV mortality model
 
   x.natmx <- natmxstart.timeTS:max.timeTS*dt
 
   k.natmx.time <- k.dt*(floor(natmxstart.time / k.dt) - 3L):(ceiling(max.time / k.dt) + 3L)
-  k.natmx.age <- k.incrate.age
+  k.natmx.age <- k.dt*(floor(min.age / k.dt) - 3L):(ceiling(max.age / k.dt) + 3L)
 
   nk_natmx_time <- length(k.natmx.time)-4L
   nk_natmx_age <- length(k.natmx.age)-4L
@@ -219,18 +213,16 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     ## x_art                 = x.art,
                     x_natmx               = x.natmx,
                     ## incidence model
-                    nk_incrate_time       = nk_incrate_time,
-                    nk_incrate_age        = nk_incrate_age,
-                    k_incrate_time        = k.incrate.time,
-                    k_incrate_age         = k.incrate.age,
-                    X_incrate_time        = X_incrate_time,
-                    Xmid_incrate_time     = Xmid_incrate_time,
-                    X_incrate_age         = X_incrate_age,
-                    Xmid_incrate_age      = Xmid_incrate_age,
                     D_incrate_time        = D_incrate_time,
                     D_incrate_age         = D_incrate_age,
                     pen_ord_incrate       = pen.ord.incrate,
-                    Pcar_prec_incrate     = Pcar_prec_incrate,
+                    ## NOTE: Matrix is column-oriented, Stan is row-oriented,
+                    ##       so this relies on symmetry of P_incrate. Also
+                    ##       add +1 because Matrix is 0-based, Stan 1-based.
+                    P_incrate_nnz         = length(attr(P_incrate, "x")),
+                    P_incrate_w           = attr(P_incrate, "x"),
+                    P_incrate_v           = attr(P_incrate, "i")+1L,
+                    P_incrate_u           = attr(P_incrate, "p")+1L, 
                     ## non-HIV mortality model
                     nk_natmx_time         = nk_natmx_time,
                     nk_natmx_age          = nk_natmx_age,

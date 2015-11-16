@@ -1,6 +1,6 @@
 parameters {
 
-  matrix[nk_incrate_time, nk_incrate_age] coef_incrate_time_age;
+  matrix[STEPS_time-1, STEPS_age-1] log_incrate_time_age;
   vector[nk_natmx_time] coef_natmx_time;
   vector[nk_natmx_age-1] param_natmx_age;
   vector<upper=0>[STEPS_time-artstart_tIDX] dt_log_artrr;
@@ -46,11 +46,15 @@ model {
   //////////////////////
 
   {
-    vector[nk_incrate_time*nk_incrate_age] vec_coef_incrate_time_age;
+    vector[(STEPS_time-1)*(STEPS_age-1)] vec_log_incrate_time_age;
 
-    vec_coef_incrate_time_age <- to_vector(coef_incrate_time_age);
-    increment_log_prob(-nk_incrate_time*nk_incrate_age*log(sigma_incrate_time_age) -
-		       1/(2*sigma_incrate_time_age*sigma_incrate_time_age) * (vec_coef_incrate_time_age' * Pcar_prec_incrate * vec_coef_incrate_time_age));
+    vec_log_incrate_time_age <- to_vector(log_incrate_time_age);
+    increment_log_prob(-((STEPS_time-1)*(STEPS_age-1)-1)*log(sigma_incrate_time_age) -
+     		       1/(2*sigma_incrate_time_age*sigma_incrate_time_age) *
+		       (vec_log_incrate_time_age' *
+			csr_matrix_times_vector(P_incrate_n, P_incrate_n,
+						P_incrate_w, P_incrate_v, P_incrate_u,
+						vec_log_incrate_time_age)));
     
     D_natmx_time * coef_natmx_time ~ normal(0, sigma_natmx_time);
     D_natmx_age * coef_natmx_age ~ normal(0, sigma_natmx_age);
@@ -61,7 +65,7 @@ model {
   //  Construct incidence rate and mortality matrices  //
   ///////////////////////////////////////////////////////
 
-  incrateMID_time_age <- exp(Xmid_incrate_time * coef_incrate_time_age * Xmid_incrate_age');
+  incrateMID_time_age <- exp(log_incrate_time_age);
   cumavoid_time_age <- exp(-dt*diagCumSum(incrateMID_time_age));
   cumavoidMID_time_age <- block(cumavoid_time_age, 1, 1, STEPS_time-1, STEPS_age-1) .* exp(-dt/2*incrateMID_time_age);
 
