@@ -60,13 +60,13 @@ data {
   matrix[STEPS_age, nk_natmx_age] X_natmx_age;
   matrix[STEPS_age-1, nk_natmx_age] Xmid_natmx_age;
 
-  int<lower=0> pen_ord_natmx_time;
+  // int<lower=0> pen_ord_natmx_time;
   int<lower=0> pen_ord_natmx_age;
 
-  matrix[nk_natmx_time-pen_ord_natmx_time, nk_natmx_time] D_natmx_time;
+  // matrix[nk_natmx_time-pen_ord_natmx_time, nk_natmx_time] D_natmx_time;
   matrix[nk_natmx_age-pen_ord_natmx_age, nk_natmx_age] D_natmx_age;
 
-  int<lower=1, upper=nk_natmx_time> fixcoef_natmx_time;
+  // int<lower=1, upper=nk_natmx_time> fixcoef_natmx_time;
   int<lower=1, upper=nk_natmx_age> fixcoef_natmx_age;
 
 
