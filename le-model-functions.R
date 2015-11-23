@@ -36,14 +36,14 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                               ## nk.time = 7, nk.age = 7, nk.natmx = 5, nk.art = 5,
                               k.dt = 5, nk.art=5,
                               pen.ord.incrate=1L, pen.ord.natmx.time=1L, pen.ord.natmx.age=1L, pen.ord.art=1L,
-                              nsamp=NULL, hivonly=FALSE, hivelig=FALSE){
+                              nsamp=NULL, hivonly=FALSE, hivelig=FALSE, nohiv=FALSE){
 
   ## hivonly: if TRUE, only use HIV test data, don't use any residency episode data (no mortality).
   ## hivelig: indicates individuals only included if they have some HIV status information, so left truncate
   ##          at first HIV status information (inclusion conditional on survival to that point).
 
   if(is.null(dat)){
-    dat <- prepare.interval.data(sites, sexes, min.age, max.age, min.time, max.time, hivonly, hivelig)
+    dat <- prepare.interval.data(sites, sexes, min.age, max.age, min.time, max.time, hivonly, hivelig, nohiv)
   }
 
   ## Select sub-sample 

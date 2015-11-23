@@ -5,7 +5,7 @@ hiv <- subset(hiv, type %in% c("survey") & !is.na(result) & !is.na(testdate))
 
 ## Declare functions
 
-prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.time, hivonly=FALSE, hivelig=TRUE){
+prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.time, hivonly=FALSE, hivelig=FALSE, nohiv=FALSE){
 
   ## ################## ##
   ##  Prepare the data  ##
@@ -13,7 +13,10 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
 
   ind <- subset(ind, site %in% sites & sex %in% sexes)
   res <- subset(res, site %in% sites & sex %in% sexes)
-  hiv <- subset(hiv, site %in% sites & sex %in% sexes)
+  if(nohiv)
+    hiv <- subset(hiv, FALSE)
+  else
+    hiv <- subset(hiv, site %in% sites & sex %in% sexes)
 
   dat <- ind
 
