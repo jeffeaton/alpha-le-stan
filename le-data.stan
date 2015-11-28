@@ -63,8 +63,9 @@ data {
   int<lower=0> pen_ord_natmx_time;
   int<lower=0> pen_ord_natmx_age;
 
-  matrix[nk_natmx_time-pen_ord_natmx_time, nk_natmx_time] D_natmx_time;
+  // matrix[nk_natmx_time-pen_ord_natmx_time, nk_natmx_time] D_natmx_time;
   matrix[nk_natmx_age-pen_ord_natmx_age, nk_natmx_age] D_natmx_age;
+  matrix[nk_natmx_time*nk_natmx_age, nk_natmx_time*nk_natmx_age] Pcar_prec_natmx;
 
   int<lower=1, upper=nk_natmx_time> fixcoef_natmx_time;
   int<lower=1, upper=nk_natmx_age> fixcoef_natmx_age;

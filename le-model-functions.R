@@ -36,7 +36,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                               ## nk.time = 7, nk.age = 7, nk.natmx = 5, nk.art = 5,
                               k.dt = 5, nk.art=5,
                               time.pen=TRUE, age.pen=TRUE, cohort.pen=FALSE,
-                              pen.ord.incrate=1L, pen.ord.natmx.time=1L, pen.ord.natmx.age=1L, pen.ord.art=1L,
+                              pen.ord.incrate=1L, pen.ord.natmx.time=1L, pen.ord.natmx.age=1L, pen.ord.natmx=1L, pen.ord.art=1L,
                               nsamp=NULL, hivonly=FALSE, hivelig=FALSE){
 
   ## hivonly: if TRUE, only use HIV test data, don't use any residency episode data (no mortality).
@@ -143,8 +143,16 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   X_natmx_age <- splineDesign(k.natmx.age, x.age, outer.ok=TRUE)
   Xmid_natmx_age <- splineDesign(k.natmx.age, x.age[-1]-dt/2)
 
-  D_natmx_time<- diff(diag(nk_natmx_time), diff=pen.ord.natmx.time)
+  ## D_natmx_time<- diff(diag(nk_natmx_time), diff=pen.ord.natmx.time)
   D_natmx_age <- diff(diag(nk_natmx_age), diff=pen.ord.natmx.age)
+
+  ## Create precision matrix for bivariate natmx smoothing
+  Pcar_prec_natmx <- matrix(0, nk_natmx_time*nk_natmx_age, nk_natmx_time*nk_natmx_age)
+  diag(Pcar_prec_natmx[-1,]) <- rep(rep(c(0, -1), c(1, nk_natmx_time-1)), nk_natmx_age)[-1]
+  diag(Pcar_prec_natmx[-(1:nk_natmx_time),]) <- -1
+  Pcar_prec_natmx <- Pcar_prec_natmx + t(Pcar_prec_natmx)
+  diag(Pcar_prec_natmx) <- -rowSums(Pcar_prec_natmx)
+  Pcar_prec_natmx <- Pcar_prec_natmx %^% pen.ord.natmx
 
   
   ## ART model
@@ -242,8 +250,9 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     Xmid_natmx_age        = Xmid_natmx_age,
                     pen_ord_natmx_time    = pen.ord.natmx.time,
                     pen_ord_natmx_age     = pen.ord.natmx.age,
-                    D_natmx_time          = D_natmx_time,
+                    ## D_natmx_time          = D_natmx_time,
                     D_natmx_age           = D_natmx_age,
+                    Pcar_prec_natmx       = Pcar_prec_natmx,
                     fixcoef_natmx_time    = as.integer(nk_natmx_time/2),
                     fixcoef_natmx_age     = as.integer(nk_natmx_age/2),
                     ## ART model
