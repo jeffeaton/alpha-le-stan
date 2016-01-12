@@ -1,6 +1,6 @@
 ## Load dataset
 load("../alpha-prepare-data/ALPHA-data.RData")
-hiv <- subset(hiv, type %in% c("survey") & !is.na(result) & !is.na(testdate))
+hiv <- subset(hiv, type %in% c("survey", "self report") & !is.na(result) & !is.na(testdate))
 
 
 ## Declare functions
