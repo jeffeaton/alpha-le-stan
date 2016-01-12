@@ -15,7 +15,7 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
   res <- subset(res, site %in% sites & sex %in% sexes)
   hiv <- subset(hiv, site %in% sites & sex %in% sexes)
 
-  dat <- ind
+  dat <- res
 
   ## ################### ##
   ##  Truncate HIV data  ##
@@ -30,15 +30,6 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
   ## ################################ ##
   
   if(!hivonly){
-    ## identify observation intervals
-    entry <- res[order(res$entry), c("id", "entry")]
-    entry <- entry[!duplicated(entry$id),]
-    exit <- res[order(res$exit, res$death, decreasing=TRUE), c("id", "exit", "death")]  # if 2 episodes exist ending on the same day, choose one with a death
-    exit <- exit[!duplicated(exit$id),]
-    
-    ## create individual observation episodes
-    dat <- merge(dat, entry)
-    dat <- merge(dat, exit)
 
     if(hivelig){
       ## truncate to firsttest if hivelig=TRUE
