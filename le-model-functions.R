@@ -33,6 +33,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                               min.age = 15.0, max.age = 60.0,
                               min.time = 1980.5, max.time = 2011.5,
                               natmxstart.time, artstart.time,
+                              cohortstart.time=min.time, cohortend.time=max.time,
                               ## nk.time = 7, nk.age = 7, nk.natmx = 5, nk.art = 5,
                               k.dt = 5, nk.art=5,
                               time.pen=TRUE, age.pen=TRUE, cohort.pen=FALSE,
@@ -44,7 +45,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   ##          at first HIV status information (inclusion conditional on survival to that point).
 
   if(is.null(dat)){
-    dat <- prepare.interval.data(sites, sexes, min.age, max.age, min.time, max.time, hivonly, hivelig)
+    dat <- do.call(rbind, mapply(prepare.interval.data, sites, sexes, min.age, max.age, cohortstart.time, cohortend.time, hivonly, hivelig, SIMPLIFY=FALSE))
   }
 
   ## Select sub-sample 
@@ -59,7 +60,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
 
 
   ## Discretise the dataset
-  dat <- discretise.cohort.data(dat, dt=0.2)
+  dat <- discretise.cohort.data(dat, dt=0.2, min.age, max.age, min.time, max.time)
   
   ##  Create aggregated cohort data for likelihood
   aggrdat <- aggregate.cohort.data(dat)

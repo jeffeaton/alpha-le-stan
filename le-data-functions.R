@@ -83,8 +83,15 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
   ## ############## ##
 
   ## create HIV test intervals
-  lastneg <- setNames(aggregate(testdate ~ epis_id, subset(hiv, result == FALSE), max), c("epis_id", "lastneg"))
-  firstpos <- setNames(aggregate(testdate ~ epis_id, subset(hiv, result == TRUE), min), c("epis_id", "firstpos"))
+  if(any(!hiv$result))
+    lastneg <- setNames(aggregate(testdate ~ epis_id, subset(hiv, result == FALSE), max), c("epis_id", "lastneg"))
+  else
+    lastneg <- data.frame(epis_id=integer(), lastneg=numeric())
+
+  if(any(hiv$result))
+    firstpos <- setNames(aggregate(testdate ~ epis_id, subset(hiv, result == TRUE), min), c("epis_id", "firstpos"))
+  else
+    firstpos <- data.frame(epis_id=integer(), firstpos=numeric())
 
   ## merge HIV data
   dat <- merge(dat, lastneg, all.x=TRUE)
@@ -106,7 +113,7 @@ prepare.interval.data <- function(sites, sexes, min.age, max.age, min.time, max.
   return(dat)
 }
 
-discretise.cohort.data <- function(dat, dt){
+discretise.cohort.data <- function(dat, dt, min.age, max.age, min.time, max.time){
 
   ## round dates to time steps [NOTE: think more about this -- should I take the floor instead?]
   dat$dobTS <- round(dat$dob / dt)
@@ -115,10 +122,10 @@ discretise.cohort.data <- function(dat, dt){
   dat$lastnegTS <- round(dat$lastneg / dt)
   dat$firstposTS <- round(dat$firstpos / dt)
 
-  min.timeTS <- round(attr(dat, "min.time") / dt)
-  max.timeTS <- round(attr(dat, "max.time") / dt)
-  min.ageTS <- round(attr(dat, "min.age") / dt)
-  max.ageTS <- round(attr(dat, "max.age") / dt)
+  min.timeTS <- round(min.time / dt)
+  max.timeTS <- round(max.time / dt)
+  min.ageTS <- round(min.age / dt)
+  max.ageTS <- round(max.age / dt)
 
   dat <- subset(dat, is.na(lastnegTS) | is.na(firstposTS) | lastnegTS <= firstposTS) # omit inconsistent HIV data
 

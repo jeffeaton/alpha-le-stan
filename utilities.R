@@ -40,9 +40,10 @@ expose_file <- function(stanfile, path="", url=TRUE){
 
 create.cluster.scripts <- function(label, site, sex, chains, iter=1000, min.time, max.time, natmxstart.time, artstart.time,
                                    min.age = 15.0, max.age = 100.0, dt=0.1, k.dt=5, nk.art=5,
+                                   cohortstart.time=min.time, cohortend.time=max.time,
                                    pen.ord=1L, pen.ord.incrate=pen.ord, pen.ord.natmx.time=pen.ord, pen.ord.natmx.age=pen.ord,
                                    pen.ord.art=pen.ord, hivonly=FALSE, hivelig=FALSE, max.tree.depth=10,
-                                   model='isotrop', sourceurl="https://raw.github.com/jeffeaton/alpha-le-stan/", clust.path=clustpath, file.path=filepath){
+                                   model='isotrop', sourceurl="https://raw.github.com/jeffeaton/alpha-le-stan/master/", clust.path=clustpath, file.path=filepath){
 
   ## Create submit-jobs.sh if it doesn't already exist
   if(!file.exists(paste(file.path, "submit-jobs.sh", sep=""))){
@@ -64,6 +65,7 @@ create.cluster.scripts <- function(label, site, sex, chains, iter=1000, min.time
                        ", min.time=", min.time, ", max.time=", max.time,
                        ", min.age=", min.age, ", max.age=", max.age,
                        ", natmxstart.time=", natmxstart.time, ", artstart.time=", artstart.time,
+                       ", cohortstart.time=", cohortstart.time, ", cohortend.time=", cohortend.time,
                        ", pen.ord.incrate=", pen.ord.incrate, ", pen.ord.natmx.time=", pen.ord.natmx.time,
                        ", pen.ord.natmx.age=", pen.ord.natmx.age, ", pen.ord.art=", pen.ord.art, 
                        ", dt=", dt, ", k.dt=", k.dt, ", nk.art=", nk.art, ", hivonly=", hivonly, ", hivelig=", hivelig, ")",
