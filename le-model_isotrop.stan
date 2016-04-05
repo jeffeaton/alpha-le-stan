@@ -8,10 +8,14 @@ parameters {
   real<lower=0> sigma_natmx_time;
   real<lower=0> sigma_natmx_age;
   real<lower=0> sigma_art;
+  real hivsurv_scale_b0_centered;
+  real hivsurv_scale_b1_centered;
 }
 transformed parameters{
 
   vector[nk_natmx_age] coef_natmx_age;
+  real hivsurv_scale_b0; // intercept for log-scale parameter at age 30
+  real hivsurv_scale_b1; // slope for log-scale parameter per 10 years age change
 
   for(i in 1:nk_natmx_age)
     if (i < fixcoef_natmx_age){
@@ -21,6 +25,10 @@ transformed parameters{
     } else {
       coef_natmx_age[i] <- param_natmx_age[i-1];
     }
+
+  // Informative prior derived based on Todd et al. (2007) Weibull regression.
+  hivsurv_scale_b0 <- 0.25*hivsurv_scale_b0_centered + 2.55; // prior ~normal(2.55, 0.25)
+  hivsurv_scale_b1 <- 0.05*hivsurv_scale_b1_centered + -0.2; // prior ~normal(-0.2, 0.05)
 }
 model {
 
@@ -50,3 +58,10 @@ model {
     D_art * dt_log_artrr ~ normal(0, sigma_art);
   }
   
+  ////////////////////////////////////
+  // Prior on survival distribution //
+  ////////////////////////////////////
+
+  // Informative prior in transformed parameters
+  hivsurv_scale_b0_centered ~ normal(0, 1); 
+  hivsurv_scale_b1_centered ~ normal(0, 1);

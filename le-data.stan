@@ -6,6 +6,8 @@ data {
   int<lower=1> STEPS_age;
   int<lower=1, upper=STEPS_time> artstart_tIDX;
 
+  vector[STEPS_time] x_time;
+  vector[STEPS_age] x_age;
 
   // COHORT DATA
   int<lower=1> NCOH;
@@ -80,10 +82,15 @@ data {
   
   
   // HIV survival model
-  matrix[STEPS_time-1, STEPS_age-1] hivmx_dur_a0;     // sequenced [1:DUR, 1:STEPS_age]
-  matrix[STEPS_time-1, STEPS_age-1] hivsurv_dur_a0;   // sequenced [1:DUR, 1:STEPS_age]
-  matrix[STEPS_time-1, STEPS_age-1] hivmxMID_dur_a0;   // sequenced [1:(STEPS_time-1), 1:STEPS_age]
+  // matrix[STEPS_time-1, STEPS_age-1] hivmx_dur_a0;     // sequenced [1:DUR, 1:STEPS_age]
+  // matrix[STEPS_time-1, STEPS_age-1] hivsurv_dur_a0;   // sequenced [1:DUR, 1:STEPS_age]
+  // matrix[STEPS_time-1, STEPS_age-1] hivmxMID_dur_a0;   // sequenced [1:(STEPS_time-1), 1:STEPS_age]
+  real hivsurv_shape;
+  // vector[STEPS_age-1] hivsurv_scale_a0;
 
 }
 transformed data {
+
+  vector[STEPS_age-1] X_hivsurv_age;
+  X_hivsurv_age <- ((x_age[2:] - dt/2) - 30) / 10; // centered on age 30 at seroconversion, per 10 years of age
 }

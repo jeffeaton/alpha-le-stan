@@ -47,6 +47,44 @@ functions {
     return val;
   }
 
+  real weibull_hazard(real y, real alpha, real sigma){
+    return (alpha/sigma)*(y/sigma)^(alpha-1);
+  }
+
+  
+  ////////////////////////////////////////////////////////////////////////////////
+  // create_hivmx_dur_a0: functions to create survival distribution and hazard  //
+  //                      by duration of infection and age at seroconversion.   //
+  ////////////////////////////////////////////////////////////////////////////////
+
+  matrix create_hivmx_dur_a0(real shape, vector scale_a0, int steps_dur, real dt){
+    matrix[steps_dur, rows(scale_a0)] y;
+    for(j in 1:rows(scale_a0)){
+      for(i in 1:steps_dur)
+	y[i,j] <- weibull_hazard(i*dt-dt/2, shape, scale_a0[j]);
+    }
+    return y;
+  }
+  
+  matrix create_log_hivsurv_dur_a0(real shape, vector scale_a0, int steps_dur, real dt){
+    matrix[steps_dur, rows(scale_a0)] y;
+    for(j in 1:rows(scale_a0)){
+      for(i in 1:steps_dur)
+	y[i,j] <- weibull_ccdf_log(i*dt-dt/2, shape, scale_a0[j]);
+    }
+    return y;
+  }
+  
+  matrix diff_hivmxMID_dur_a0(matrix x, real dt){
+    matrix[rows(x), cols(x)] y;
+    y[1,] <- x[1,];
+    for(j in 1:cols(x))
+      for(i in 2:rows(x))
+        y[i,j] <- x[i,j] - x[i-1,j];
+    y <- -y/dt;
+    return y;
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   // calc_phivsurv: probability of surviving until exit_tIDX given infection  //
   //                at midpoint of (tIDX, aIDX) + 0:(exposeDUR-1).            //

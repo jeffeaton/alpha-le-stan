@@ -36,6 +36,7 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                               cohortstart.time=min.time, cohortend.time=max.time,
                               ## nk.time = 7, nk.age = 7, nk.natmx = 5, nk.art = 5,
                               k.dt = 5, nk.art=5,
+                              hivsurv.shape=2.0,
                               time.pen=TRUE, age.pen=TRUE, cohort.pen=FALSE,
                               pen.ord.incrate=1L, pen.ord.natmx.time=1L, pen.ord.natmx.age=1L, pen.ord.art=1L,
                               nsamp=NULL, hivonly=FALSE, hivelig=FALSE){
@@ -161,14 +162,14 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
   ##  Calculate HIV survival lookup table  ##
   ## ##################################### ##
 
-  log_hivmx_dur_a0 <- log(outer(1:(max.timeTS-min.timeTS)*dt - dt/2, min.ageTS:(max.ageTS-1L)*dt + dt/2, hivsurvhaz, param=NULL))
-  log_hivsurv_dur_a0 <- log(outer(1:(max.timeTS-min.timeTS)*dt - dt/2, min.ageTS:(max.ageTS-1L)*dt + dt/2, hivsurv, param=NULL))
-  log_hivmxMID_dur_a0 <- log(-diff(rbind(0, log_hivsurv_dur_a0))/dt)
+  ## log_hivmx_dur_a0 <- log(outer(1:(max.timeTS-min.timeTS)*dt - dt/2, min.ageTS:(max.ageTS-1L)*dt + dt/2, hivsurvhaz, param=NULL))
+  ## log_hivsurv_dur_a0 <- log(outer(1:(max.timeTS-min.timeTS)*dt - dt/2, min.ageTS:(max.ageTS-1L)*dt + dt/2, hivsurv, param=NULL))
+  ## log_hivmxMID_dur_a0 <- log(-diff(rbind(0, log_hivsurv_dur_a0))/dt)
 
 
-  hivmx_dur_a0 <- exp(log_hivmx_dur_a0)
-  hivsurv_dur_a0 <- exp(log_hivsurv_dur_a0)
-  hivmxMID_dur_a0 <- exp(log_hivmxMID_dur_a0)
+  ## hivmx_dur_a0 <- exp(log_hivmx_dur_a0)
+  ## hivsurv_dur_a0 <- exp(log_hivsurv_dur_a0)
+  ## hivmxMID_dur_a0 <- exp(log_hivmxMID_dur_a0)
 
     
   ## ######################## ##
@@ -255,12 +256,13 @@ prepare.stan.data <- function(sites = NULL, sexes = NULL, dat = NULL, dt = 0.1,
                     pen_ord_art           = pen.ord.art,
                     D_art                 = D_art,
                     ## HIV survival model
-                    log_hivmx_dur_a0      = log_hivmx_dur_a0,
-                    log_hivsurv_dur_a0    = log_hivsurv_dur_a0,
-                    log_hivmxMID_dur_a0   = log_hivmxMID_dur_a0,
-                    hivmx_dur_a0          = hivmx_dur_a0,
-                    hivsurv_dur_a0        = hivsurv_dur_a0,
-                    hivmxMID_dur_a0       = hivmxMID_dur_a0)
+                    hivsurv_shape         = hivsurv.shape)
+                    ## log_hivmx_dur_a0      = log_hivmx_dur_a0,
+                    ## log_hivsurv_dur_a0    = log_hivsurv_dur_a0,
+                    ## log_hivmxMID_dur_a0   = log_hivmxMID_dur_a0,
+                    ## hivmx_dur_a0          = hivmx_dur_a0,
+                    ## hivsurv_dur_a0        = hivsurv_dur_a0,
+                    ## hivmxMID_dur_a0       = hivmxMID_dur_a0)
 }
 
 
