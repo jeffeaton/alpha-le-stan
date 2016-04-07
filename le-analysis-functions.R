@@ -42,12 +42,13 @@ create.param.list <- function(stanfit){
                                                            coef_natmx_time         = param$coef_natmx_time[ii,],
                                                            coef_natmx_age          = param$coef_natmx_age[ii,],
                                                            coef_natmx_time_age     = outer(param$coef_natmx_time[ii,], param$coef_natmx_age[ii,], "+"),
-                                                           ## coef_art                = param$coef_art[ii,],
                                                            dt_log_artrr            = param$dt_log_artrr[ii,],
                                                            sigma2_incrate_time_age = param$sigma2_incrate_time_age[ii],
                                                            sigma2_natmx_time       = param$sigma2_natmx_time[ii],
                                                            sigma2_natmx_age        = param$sigma2_natmx_age[ii],
-                                                           sigma2_art              = param$sigma2_art[ii]))
+                                                           sigma2_art              = param$sigma2_art[ii],
+                                                           hivsurv_scale_b0        = param$hivsurv_scale_b0[ii],
+                                                           hivsurv_scale_b1        = param$hivsurv_scale_b1[ii]))
   return(param)
 }
 
@@ -60,16 +61,17 @@ create.modpred <- function(param, stand){
   natmx_time_age <- exp(stand$X_natmx_time %*% param$coef_natmx_time_age %*% t(stand$X_natmx_age))
   natsurv_time_age <- exp(-stand$dt*diagCumSum(exp(stand$Xmid_natmx_time %*% param$coef_natmx_time_age %*% t(stand$Xmid_natmx_age))))
 
-  ## artrr <- invlogit(stand$X_art %*% param$coef_art)
-  ## artrr_MID <- invlogit(stand$Xmid_art %*% param$coef_art)
-  ## artrr[1:(stand$artstart_tIDX-1)] <- 1.0
-  ## artrr_MID[1:(stand$artstart_tIDX-1)] <- 1.0
-
   log_artrr <- stand$dt*cumsum(param$dt_log_artrr);
   artrr <- rep(1.0, stand$STEPS_time)
   artrr_MID <- rep(1.0, stand$STEPS_time-1L)
   artrr[(stand$artstart_tIDX+1L):stand$STEPS_time] <- exp(log_artrr)
   artrr_MID[stand$artstart_tIDX:(stand$STEPS_time-1L)] <- exp(log_artrr - stand$dt/2*param$dt_log_artrr)
+
+  hivsurv_scale_a0 <- exp(param$hivsurv_scale_b0 + param$hivsurv_scale_b1 * ((stand$x_age[-1] - stand$dt/2) - 30) / 10) # !!! HARD-CODED DESIGN MATRIX
+  hivmx_dur_a0 <- create_hivmx_dur_a0(stand$hivsurv_shape, hivsurv_scale_a0, stand$STEPS_time-1L, stand$dt)
+  log_hivsurv_dur_a0 <- create_log_hivsurv_dur_a0(stand$hivsurv_shape, hivsurv_scale_a0, stand$STEPS_time-1L, stand$dt)
+  hivmxMID_dur_a0 <- diff_hivmxMID_dur_a0(log_hivsurv_dur_a0, stand$dt)
+  hivsurv_dur_a0 <- exp(log_hivsurv_dur_a0)
 
   return(list(incrateMID_time_age = incrateMID_time_age,
               cumavoid_time_age = cumavoid_time_age,
@@ -77,8 +79,12 @@ create.modpred <- function(param, stand){
               natmx_time_age = natmx_time_age,
               natsurv_time_age = natsurv_time_age,
               artrr = artrr,
-              artrr_MID = artrr_MID))
+              artrr_MID = artrr_MID,
+              hivmx_dur_a0 = hivmx_dur_a0,
+              hivsurv_dur_a0 = hivsurv_dur_a0,
+              hivmxMID_dur_a0 = hivmxMID_dur_a0))
 }
+
 
 cumincid.period <- function(param, stand){
   log_incrate_time_age <- stand$X_incrate_time %*% param$coef_incrate_time_age %*% t(stand$Xmid_incrate_age)
@@ -108,7 +114,7 @@ prev <- function(tidx, aidx, modpred, stand){
 Rcreate_phivp_mat <- function(modpred, stand, art=TRUE){
   if(!art)
     stand$artstart_tIDX <- stand$STEPS_time
-  create_phivp_mat(modpred$cumavoidMID_time_age, modpred$incrateMID_time_age, stand$hivsurv_dur_a0, stand$hivmxMID_dur_a0, modpred$artrr_MID, stand$artstart_tIDX, modpred$natsurv_time_age, stand$dt)
+  create_phivp_mat(modpred$cumavoidMID_time_age, modpred$incrateMID_time_age, modpred$hivsurv_dur_a0, modpred$hivmxMID_dur_a0, modpred$artrr_MID, stand$artstart_tIDX, modpred$natsurv_time_age, stand$dt)
 }
 Rcreate_phivn_mat <- function(modpred){ return(modpred$cumavoid_time_age * modpred$natsurv_time_age)}
 
