@@ -8,6 +8,7 @@ parameters {
   real<lower=0> sigma_natmx_time;
   real<lower=0> sigma_natmx_age;
   real<lower=0> sigma_art;
+  real<lower=0>  hivsurv_shape;
   real hivsurv_scale_b0_centered;
   real hivsurv_scale_b1_centered;
 }
@@ -65,3 +66,6 @@ model {
   // Informative prior in transformed parameters
   hivsurv_scale_b0_centered ~ normal(0, 1); 
   hivsurv_scale_b1_centered ~ normal(0, 1);
+
+  // Informative prior on Weibull shape parameter -- mean 2, 95% quantiles (1.0, 3.3)
+  hivsurv_shape ~ gamma(12.0, 6.0);

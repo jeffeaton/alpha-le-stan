@@ -47,6 +47,7 @@ create.param.list <- function(stanfit){
                                                            sigma2_natmx_time       = param$sigma2_natmx_time[ii],
                                                            sigma2_natmx_age        = param$sigma2_natmx_age[ii],
                                                            sigma2_art              = param$sigma2_art[ii],
+                                                           hivsurv_shape           = param$hivsurv_shape[ii],,
                                                            hivsurv_scale_b0        = param$hivsurv_scale_b0[ii],
                                                            hivsurv_scale_b1        = param$hivsurv_scale_b1[ii]))
   return(param)
@@ -68,8 +69,8 @@ create.modpred <- function(param, stand){
   artrr_MID[stand$artstart_tIDX:(stand$STEPS_time-1L)] <- exp(log_artrr - stand$dt/2*param$dt_log_artrr)
 
   hivsurv_scale_a0 <- exp(param$hivsurv_scale_b0 + param$hivsurv_scale_b1 * ((stand$x_age[-1] - stand$dt/2) - 30) / 10) # !!! HARD-CODED DESIGN MATRIX
-  hivmx_dur_a0 <- create_hivmx_dur_a0(stand$hivsurv_shape, hivsurv_scale_a0, stand$STEPS_time-1L, stand$dt)
-  log_hivsurv_dur_a0 <- create_log_hivsurv_dur_a0(stand$hivsurv_shape, hivsurv_scale_a0, stand$STEPS_time-1L, stand$dt)
+  hivmx_dur_a0 <- create_hivmx_dur_a0(param$hivsurv_shape, hivsurv_scale_a0, stand$STEPS_time-1L, stand$dt)
+  log_hivsurv_dur_a0 <- create_log_hivsurv_dur_a0(param$hivsurv_shape, hivsurv_scale_a0, stand$STEPS_time-1L, stand$dt)
   hivmxMID_dur_a0 <- diff_hivmxMID_dur_a0(log_hivsurv_dur_a0, stand$dt)
   hivsurv_dur_a0 <- exp(log_hivsurv_dur_a0)
 

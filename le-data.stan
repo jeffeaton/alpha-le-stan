@@ -85,7 +85,7 @@ data {
   // matrix[STEPS_time-1, STEPS_age-1] hivmx_dur_a0;     // sequenced [1:DUR, 1:STEPS_age]
   // matrix[STEPS_time-1, STEPS_age-1] hivsurv_dur_a0;   // sequenced [1:DUR, 1:STEPS_age]
   // matrix[STEPS_time-1, STEPS_age-1] hivmxMID_dur_a0;   // sequenced [1:(STEPS_time-1), 1:STEPS_age]
-  real hivsurv_shape;
+  // real hivsurv_shape;
   // vector[STEPS_age-1] hivsurv_scale_a0;
 
 }
